@@ -12,9 +12,26 @@ class GameViewModel: ViewModel() {
     companion object {
         private const val DONE = 0L
 
+        private const val COUNTDOWN_PANIC_SECONDS = 10L
+
         private const val ONE_SECOND = 1000L
 
         private const val COUNTDOWN_TIME = 10000L
+
+        private val CORRECT_BUZZ_PATTERN = longArrayOf(100, 100, 100, 100, 100, 100)
+
+        private val PANIC_BUZZ_PATTERN = longArrayOf(0, 200)
+
+        private val GAME_OVER_BUZZ_PATTERN = longArrayOf(0, 2000)
+
+        private val NO_BUZZ_PATTERN = longArrayOf(0)
+    }
+
+    enum class BuzzType(val pattern: LongArray){
+        CORRECT(CORRECT_BUZZ_PATTERN),
+        PANIC(PANIC_BUZZ_PATTERN),
+        GAME_OVER(GAME_OVER_BUZZ_PATTERN),
+        NO_BUZZ(NO_BUZZ_PATTERN)
     }
 
     private val timer: CountDownTimer
@@ -35,6 +52,10 @@ class GameViewModel: ViewModel() {
     private var _eventGameFinished = MutableLiveData<Boolean>()
     val eventGameFinished: LiveData<Boolean>
         get() = _eventGameFinished
+
+    private var _eventBuzz = MutableLiveData<BuzzType>()
+    val eventBuzz: LiveData<BuzzType>
+        get() = _eventBuzz
     //List of Words
     private lateinit var wordList: MutableList<String>
 
@@ -84,6 +105,7 @@ class GameViewModel: ViewModel() {
 
     fun onCorrect() {
         _score.value = score.value?.plus(1)
+        _eventBuzz.value = BuzzType.CORRECT
         nextWord()
     }
 
@@ -97,10 +119,17 @@ class GameViewModel: ViewModel() {
 
         timer = object : CountDownTimer(COUNTDOWN_TIME, ONE_SECOND) {
             override fun onTick(millsUntilFinished: Long) {
-                _currentTime.value = millsUntilFinished
+                _currentTime.value = millsUntilFinished/ ONE_SECOND
+                if(millsUntilFinished/ ONE_SECOND <= COUNTDOWN_PANIC_SECONDS) {
+                    _eventBuzz.value = BuzzType.PANIC
+                }
             }
 
-            override fun onFinish() {_eventGameFinished.value = true}
+            override fun onFinish() {
+                _currentTime.value = DONE
+                _eventGameFinished.value = true
+                _eventBuzz.value = BuzzType.GAME_OVER
+            }
         }
 
         timer.start()
@@ -114,5 +143,9 @@ class GameViewModel: ViewModel() {
 
     fun onGameFinishComplete() {
         _eventGameFinished.value = false
+    }
+
+    fun onBuzzComplete() {
+        _eventBuzz.value = BuzzType.NO_BUZZ
     }
 }
