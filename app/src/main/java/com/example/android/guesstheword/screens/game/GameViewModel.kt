@@ -23,8 +23,8 @@ class GameViewModel: ViewModel() {
     val word: LiveData<String>
         get() = _word
 
-    private var _currentTime = MutableLiveData<String>()
-    val currentTime: LiveData<String>
+    private var _currentTime = MutableLiveData<Long>()
+    val currentTime: LiveData<Long>
         get() = _currentTime
 
     // The current score
@@ -97,7 +97,7 @@ class GameViewModel: ViewModel() {
 
         timer = object : CountDownTimer(COUNTDOWN_TIME, ONE_SECOND) {
             override fun onTick(millsUntilFinished: Long) {
-                _currentTime.value = formatElapsedTime(millsUntilFinished)
+                _currentTime.value = millsUntilFinished
             }
 
             override fun onFinish() {_eventGameFinished.value = true}
